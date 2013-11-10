@@ -1,3 +1,0 @@
-var bar = {
-  hi: "hello"
-};
