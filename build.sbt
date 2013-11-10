@@ -19,8 +19,6 @@ scalacOptions := Seq("-deprecation", "-unchecked", "-encoding", "utf8")
 
 // publishing ivy artifact to bintray
 
-resolvers += "hitsoft-maven" at "http://dl.bintray.com/content/hitsoft/maven"
-
 seq(bintraySettings:_*)
 
 publishArtifact in Test := false
