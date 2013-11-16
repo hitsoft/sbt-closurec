@@ -5,7 +5,7 @@ organization := "com.hitsoft"
 name := "closurec-sbt"
 
 version <<= sbtVersion(v =>
-  if (v.startsWith("0.13")) "0.1.0"
+  if (v.startsWith("0.13")) "0.1.2"
   else error("unsupported sbt version %s" format v)
 )
 

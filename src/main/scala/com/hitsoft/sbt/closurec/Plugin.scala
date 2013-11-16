@@ -11,20 +11,38 @@ object Plugin extends Plugin {
   import ClosureKeys._
 
   object ClosureKeys {
-    lazy val closure = TaskKey[Seq[File]]("closure", "Compiles .jsm javascript manifest files")
-    lazy val cleanJs = TaskKey[Unit]("cleanJs", "cleans js compiled dir after calcDeps")
-    lazy val calcDeps = TaskKey[Seq[File]]("calcDeps", "calculates js files dependencies by goog.require, goog.provide")
-    lazy val externsIncludeFilter = SettingKey[FileFilter]("externs-include-filter", "Filter for including externs sources and resources files from default directories.", closure)
-    lazy val externsExcludeFilter = SettingKey[FileFilter]("externs-exclude-filter", "Filter for excluding externs sources and resources files from default directories.", closure)
-    lazy val entryIncludeFilter = SettingKey[FileFilter]("entry-include-filter", "Filter for including entry sources and resources files from default directories.", closure)
-    lazy val charset = SettingKey[Charset]("charset", "Sets the character encoding used in file IO. Defaults to utf-8")
-    lazy val closureOptions = SettingKey[CompilerOptions]("options", "Compiler options")
-    lazy val suffix = SettingKey[String]("suffix", "String to append to output filename (before file extension)")
-    lazy val variableRenamingPolicy = SettingKey[VariableRenamingPolicy]("js-variable-renaming-policy", "Javascript variable renaming policy (default local only)")
-    lazy val prettyPrint = SettingKey[Boolean]("js-pretty-print", "Whether to pretty print Javascript (default false)")
-    lazy val strictMode = SettingKey[Boolean]("js-strict-mode", "Whether to strict mode Javascript (default false)")
-    lazy val compilationLevel = SettingKey[CompilationLevel]("js-compilation-level", "Closure Compiler compilation level")
-    lazy val warningLevel = SettingKey[WarningLevel]("js-warning-level", "Closure Compiler warning level")
+    lazy val closure = TaskKey[Seq[File]](
+      "closure", "Compiles entry javascript files with Closure Compiler")
+    lazy val cleanJs = TaskKey[Unit](
+      "clean-js", "Cleans js output dir after calcDeps")
+    lazy val calcDeps = TaskKey[Seq[File]](
+      "calc-deps", "Calculates js files dependencies by goog.require, goog.provide")
+    lazy val externsIncludeFilter = SettingKey[FileFilter](
+      "externs-include-filter", "Filter for including externs sources and resources files from default directories.", closure)
+    lazy val externsExcludeFilter = SettingKey[FileFilter](
+      "externs-exclude-filter", "Filter for excluding externs sources and resources files from default directories.", closure)
+    lazy val externsFiles = TaskKey[Seq[File]](
+      "externs-files", "Externs files list", closure)
+    lazy val entryFilter = SettingKey[FileFilter](
+      "entry-include-filter", "Filter for specifying entry files from default directories.", closure)
+    lazy val entryFiles = TaskKey[Seq[File]](
+      "entry-files", "Entry files list", closure)
+    lazy val charset = SettingKey[Charset](
+      "charset", "Sets the character encoding used in file IO. Defaults to utf-8")
+    lazy val closureOptions = SettingKey[CompilerOptions](
+      "options", "Compiler options", closure)
+    lazy val suffix = SettingKey[String](
+      "suffix", "String to append to output filename (before file extension)", closure)
+    lazy val variableRenamingPolicy = SettingKey[VariableRenamingPolicy](
+      "js-variable-renaming-policy", "Javascript variable renaming policy (default local only)", closure)
+    lazy val prettyPrint = SettingKey[Boolean](
+      "js-pretty-print", "Whether to pretty print Javascript (default false)", closure)
+    lazy val strictMode = SettingKey[Boolean](
+      "js-strict-mode", "Whether to strict mode Javascript (default false)", closure)
+    lazy val compilationLevel = SettingKey[CompilationLevel](
+      "js-compilation-level", "Closure Compiler compilation level", closure)
+    lazy val warningLevel = SettingKey[WarningLevel](
+      "js-warning-level", "Closure Compiler warning level", closure)
   }
 
   /** Provide quick access to the enum values in com.google.javascript.jscomp.VariableRenamingPolicy */
@@ -72,10 +90,7 @@ object Plugin extends Plugin {
         options
     }
 
-  def closureSettings: Seq[Setting[_]] =
-    closureSettingsIn(Compile) ++ closureSettingsIn(Test)
-
-  def closureSettingsIn(conf: Configuration): Seq[Setting[_]] =
+  def closureSettingsManualCompileIn(conf: Configuration): Seq[Setting[_]] =
     inConfig(conf)(closureSettings0 ++ Seq(
       sourceDirectory in closure <<= (sourceDirectory in conf) {
         _ / "javascript"
@@ -99,12 +114,23 @@ object Plugin extends Plugin {
       cleanFiles <++= (cleanFiles in calcDeps in conf),
       watchSources <++= (watchSources in calcDeps in conf),
       resourceGenerators in conf <+= closure in conf,
-      resourceGenerators in conf <+= calcDeps in conf,
+      resourceGenerators in conf <+= calcDeps in conf
+    )
+
+  def closureSettingsManualCompile: Seq[Setting[_]] =
+    closureSettingsManualCompileIn(Compile)
+
+  def closureSettings: Seq[Setting[_]] =
+    closureSettingsIn(Compile)
+
+  def closureSettingsIn(conf: Configuration): Seq[Setting[_]] =
+    closureSettingsManualCompileIn(conf) ++ inConfig(conf)(Seq(
       compile in conf <<= (compile in conf).dependsOn(calcDeps in conf),
       cleanJs in conf <<= (cleanJs in conf).dependsOn(compile in conf),
       closure in conf <<= (closure in conf).dependsOn(cleanJs in conf),
       packageBin in conf <<= (packageBin in conf).dependsOn(closure in conf)
-    )
+    ))
+
 
   object ExternsFileFilter extends FileFilter {
     val p = Pattern.compile("^.*/externs/[^/]*\\.js$", Pattern.CASE_INSENSITIVE)
@@ -122,7 +148,7 @@ object Plugin extends Plugin {
     excludeFilter in closure := (".*" - ".") || HiddenFileFilter || ExternsFileFilter,
     externsIncludeFilter in closure := ExternsFileFilter,
     externsExcludeFilter in closure := (".*" - ".") || HiddenFileFilter,
-    entryIncludeFilter in closure := "*.entry.js",
+    entryFilter in closure := "*.entry.js",
     includeFilter in calcDeps := "*.js",
     excludeFilter in calcDeps := (".*" - ".") || HiddenFileFilter || ExternsFileFilter,
     suffix in closure := "",
@@ -133,6 +159,8 @@ object Plugin extends Plugin {
     cleanJs <<= calcDepsCleanTask,
     closure <<= closureCompilerTask,
     calcDeps <<= calcDepsTask,
+    externsFiles <<= externsFilesTask,
+    entryFiles <<= entryFilesTask,
     variableRenamingPolicy := VariableRenamingPolicy.LOCAL,
     prettyPrint := false,
     strictMode := false,
@@ -158,43 +186,34 @@ object Plugin extends Plugin {
     (streams,
       sourceDirectory in closure,
       resourceManaged in closure,
-      includeFilter in closure,
-      excludeFilter in closure,
-      externsIncludeFilter in closure,
-      externsExcludeFilter in closure,
-      entryIncludeFilter in closure,
-      charset in closure,
+      unmanagedSources in closure,
+      externsFiles in closure,
+      entryFiles in closure,
       closureOptions in closure,
       suffix in closure) map {
       (out,
-       sources,
-       target,
-       include,
-       exclude,
-       externsInclude,
-       externsExclude,
-       entryInclude,
-       charset,
+       sourceDir,
+       outDir,
+       sourceFiles,
+       externsFiles,
+        entryFiles,
        options,
        suffix) => {
-        val src = sources.descendantsExcept(include, exclude).get.toList
-        val externs = sources.descendantsExcept(externsInclude, externsExclude).get.toList
-        // compile changed sources
         (for {
-          entry <- sources.descendantsExcept(entryInclude, exclude).get
-          outFile <- computeOutFile(sources, entry, target, suffix)
-          if !sources.descendantsExcept(include, exclude).get.filter(_ newerThan outFile).isEmpty
+          entryFile <- entryFiles
+          mapping = new JsSourceMapping(sourceDir, entryFile, outDir, sourceFiles, suffix)
+          if mapping.changed
         } yield {
-          (entry, outFile)
+          (mapping.entryFile, mapping.outFile)
         }) match {
           case Nil =>
             out.log.debug("No JavaScript entry files to compile")
           case xs =>
-            out.log.info("Compiling %d entry files to %s" format(xs.size, target))
-            xs map doCompile(out.log, options, src, externs)
+            out.log.info("Compiling %d entry files to %s" format(xs.size, outDir))
+            xs map doCompile(out.log, options, sourceFiles, externsFiles)
             out.log.debug("Compiled %s entry files" format xs.size)
         }
-        compiled(target)
+        compiled(outDir)
       }
     }
 
@@ -231,7 +250,19 @@ object Plugin extends Plugin {
         sourceDir.descendantsExcept(incl, excl).get
     }
 
-  private def doCompile(log: Logger, options: CompilerOptions, src: List[File], externs: List[File])(pair: (File, File)) = {
+  private def externsFilesTask =
+    (sourceDirectory in closure, externsIncludeFilter in closure, externsExcludeFilter in closure) map {
+      (sourceDir, incl, excl) =>
+        sourceDir.descendantsExcept(incl, excl).get
+    }
+
+  private def entryFilesTask =
+    (sourceDirectory in closure, entryFilter in closure, excludeFilter in closure) map {
+      (sourceDir, incl, excl) =>
+        sourceDir.descendantsExcept(incl, excl).get
+    }
+
+  private def doCompile(log: Logger, options: CompilerOptions, src: Seq[File], externs: Seq[File])(pair: (File, File)) = {
     val (entry, out) = pair
     log.debug("Compiling %s" format entry)
     val compiler = new Compiler(options)
@@ -240,11 +271,4 @@ object Plugin extends Plugin {
 
   private def compiled(under: File) = (under ** "*.js").get
 
-  private def computeOutFile(sources: File, manifest: File, targetDir: File, suffix: String): Option[File] = {
-    val outFile = IO.relativize(sources, manifest).get.replaceAll("\\.entry\\.js$", "").replaceAll("\\.js$", "") + {
-      if (suffix.length > 0) "-%s.min.js".format(suffix)
-      else ".min.js"
-    }
-    Some(new File(targetDir, outFile))
-  }
 }

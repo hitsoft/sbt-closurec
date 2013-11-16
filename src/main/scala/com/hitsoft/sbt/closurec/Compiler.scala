@@ -1,6 +1,6 @@
 package com.hitsoft.sbt.closurec
 
-import com.google.javascript.jscomp.{Compiler => ClosureCompiler, SourceFile, CompilerOptions, JSError}
+import com.google.javascript.jscomp.{Compiler => ClosureCompiler, SourceMap, SourceFile, CompilerOptions, JSError}
 
 import sbt._
 
@@ -8,14 +8,18 @@ import java.util
 
 class Compiler(options: CompilerOptions) {
 
-  def toJList[T](l: List[T]): util.List[T] = {
+  def toJList[T](l: Seq[T]): util.List[T] = {
     val a = new util.ArrayList[T]
     l.map(a.add(_))
     a
   }
 
-  def compile(sources: List[File], externs: List[File], target: File, log: Logger): Unit = {
+  def compile(sources: Seq[File], externs: Seq[File], target: File, log: Logger): Unit = {
     val compiler = new ClosureCompiler
+
+    options.setSourceMapOutputPath(target.getCanonicalPath + ".map")
+    options.setSourceMapFormat(SourceMap.Format.V3)
+    options.setSourceMapDetailLevel(SourceMap.DetailLevel.ALL)
 
     val result = compiler.compile(
       toJList(externs.map(SourceFile.fromFile)),

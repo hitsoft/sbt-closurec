@@ -93,7 +93,7 @@ object GoogDeps {
     res
   }
 
-  def filterByDependencies(entry: File, files: Seq[File]): List[File] = {
+  def filterByDependencies(entry: File, files: Seq[File]): Seq[File] = {
     val dep = new GoogDeps
     dep.collect(files)
     val res = mutable.Set.empty[File]
