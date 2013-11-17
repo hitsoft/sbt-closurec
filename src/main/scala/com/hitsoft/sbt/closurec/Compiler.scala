@@ -10,16 +10,21 @@ class Compiler(options: CompilerOptions) {
 
   def toJList[T](l: Seq[T]): util.List[T] = {
     val a = new util.ArrayList[T]
-    l.map(a.add(_))
+    l.map(a.add)
     a
   }
 
-  def compile(sources: Seq[File], externs: Seq[File], target: File, log: Logger): Unit = {
+  def compile(sources: Seq[File], externs: Seq[File], target: File, log: Logger, generateMapFile: Boolean): Unit = {
     val compiler = new ClosureCompiler
 
-    options.setSourceMapOutputPath(target.getCanonicalPath + ".map")
-    options.setSourceMapFormat(SourceMap.Format.V3)
-    options.setSourceMapDetailLevel(SourceMap.DetailLevel.ALL)
+    val mapPath = target.getCanonicalPath + ".map"
+
+    if (generateMapFile) {
+      log.debug("Compiler -> generate source map to '%s'" format mapPath)
+      options.setSourceMapOutputPath(mapPath)
+      options.setSourceMapFormat(SourceMap.Format.V3)
+      options.setSourceMapDetailLevel(SourceMap.DetailLevel.ALL)
+    }
 
     val result = compiler.compile(
       toJList(externs.map(SourceFile.fromFile)),
@@ -38,8 +43,13 @@ class Compiler(options: CompilerOptions) {
         warnings.foreach { (err: JSError) => log.warn(err.toString) }
       }
 
-      IO.createDirectory(file(target.getParent))
+      IO.createDirectory(target.getParentFile)
       IO.write(target, compiler.toSource)
+      if (generateMapFile) {
+        val sb = new java.lang.StringBuilder()
+        result.sourceMap.appendTo(sb, target.getName)
+        IO.write(file(mapPath), sb.toString)
+      }
     }
   }
 }
