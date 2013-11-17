@@ -2,7 +2,7 @@ sbtPlugin := true
 
 organization := "com.hitsoft"
 
-name := "closurec-sbt"
+name := "sbt-closurec"
 
 libraryDependencies += "com.google.javascript" % "closure-compiler"   % "v20131014"
 
@@ -15,8 +15,6 @@ scalacOptions := Seq("-deprecation", "-unchecked", "-encoding", "utf8")
 // publishing ivy artifact to bintray
 
 seq(bintraySettings:_*)
-
-seq(releaseSettings:_*)
 
 publishArtifact in Test := false
 
