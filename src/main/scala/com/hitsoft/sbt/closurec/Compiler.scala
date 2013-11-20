@@ -44,7 +44,11 @@ class Compiler(options: CompilerOptions) {
       }
 
       IO.createDirectory(target.getParentFile)
-      IO.write(target, compiler.toSource)
+      var compiled = compiler.toSource
+      if (generateMapFile) {
+        compiled += "\n//@ sourceMappingURL=%s" format (file(mapPath).getName)
+      }
+      IO.write(target, compiled)
       if (generateMapFile) {
         val sb = new java.lang.StringBuilder()
         result.sourceMap.appendTo(sb, target.getName)

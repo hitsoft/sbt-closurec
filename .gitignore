@@ -15,3 +15,4 @@ project/plugins/project/
 .scala_dependencies
 .idea
 .idea_modules
+atlassian-ide-plugin.xml
