@@ -32,7 +32,7 @@ object Plugin extends Plugin {
       "charset", "Sets the character encoding used in file IO. Defaults to utf-8")
     lazy val closureOptions = SettingKey[CompilerOptions](
       "options", "Compiler options", closure)
-    lazy val suffix = SettingKey[String](
+    lazy val suffix = TaskKey[String](
       "suffix", "String to append to output filename (before file extension)", closure)
     lazy val jsVariableRenamingPolicy = SettingKey[VariableRenamingPolicy](
       "js-variable-renaming-policy", "Javascript variable renaming policy (default local only)", closure)
