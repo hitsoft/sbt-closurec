@@ -93,10 +93,22 @@ object GoogDeps {
     res
   }
 
+  def getBaseFile(files: Seq[File]): Option[File] = {
+    val bases = files.filter(file => (file.getParentFile.name == "goog") && (file.name == "base.js"))
+    bases.size match {
+      case 1 => Some(bases(0))
+      case _ => None
+    }
+  }
+
   def filterByDependencies(entry: File, files: Seq[File]): Seq[File] = {
     val dep = new GoogDeps
     dep.collect(files)
     val res = mutable.Set.empty[File]
+    getBaseFile(files) match {
+      case Some(base) => res.add(base)
+      case None =>
+    }
     res.add(entry)
     for (namespace <- readDepFromFile(entry).require) {
       addRequirementWithDependencies(res, dep, namespace)

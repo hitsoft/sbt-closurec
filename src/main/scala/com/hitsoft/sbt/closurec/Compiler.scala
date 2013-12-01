@@ -46,7 +46,7 @@ class Compiler(options: CompilerOptions) {
       IO.createDirectory(target.getParentFile)
       var compiled = compiler.toSource
       if (generateMapFile) {
-        compiled += "\n//@ sourceMappingURL=%s" format (file(mapPath).getName)
+        compiled += "\n//@ sourceMappingURL=%s" format file(mapPath).getName
       }
       IO.write(target, compiled)
       if (generateMapFile) {

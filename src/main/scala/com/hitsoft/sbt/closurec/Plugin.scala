@@ -115,9 +115,7 @@ object Plugin extends Plugin {
       cleanFiles <++= (cleanFiles in closure in conf),
       watchSources <++= (watchSources in closure in conf),
       cleanFiles <++= (cleanFiles in calcDeps in conf),
-      watchSources <++= (watchSources in calcDeps in conf),
-      resourceGenerators in conf <+= closure in conf,
-      resourceGenerators in conf <+= calcDeps in (conf, closure)
+      watchSources <++= (watchSources in calcDeps in conf)
     )
 
   def closureSettingsManualCompile: Seq[Setting[_]] =
