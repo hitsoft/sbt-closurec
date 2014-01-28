@@ -137,7 +137,7 @@ object Plugin extends Plugin {
     val p = Pattern.compile("^.*/externs/[^/]*\\.js$", Pattern.CASE_INSENSITIVE)
 
     def accept(path: File): Boolean = {
-      p.matcher(path.getCanonicalPath).matches()
+      p.matcher(path.getCanonicalPath.replace("\\", "/")).matches()
     }
   }
 
