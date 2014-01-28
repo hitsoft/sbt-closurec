@@ -62,7 +62,7 @@ object GoogDeps {
   private def readDepFromFile(file: sbt.File): GoogDeps.Dep = {
     val provide = mutable.ListBuffer.empty[String]
     val require = mutable.ListBuffer.empty[String]
-    val src = Source.fromFile(file)
+    val src = Source.fromFile(file, "utf-8")
     for (line <- src.getLines()) {
       var m = PATTERN_PROVIDE.matcher(line)
       if (m.matches) {
