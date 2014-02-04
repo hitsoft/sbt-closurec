@@ -11,7 +11,7 @@ class JsSourceMapping(val sourcesDir: File, val entryFile: File, val outDir: Fil
       if (suffix.isEmpty)
         ".min.js"
       else
-        "-%s.min.js" format suffix
+        ".%s.min.js" format suffix
     }
   }
 
