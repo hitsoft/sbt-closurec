@@ -46,6 +46,8 @@ object Plugin extends Plugin {
       "js-warning-level", "Closure Compiler warning level", closure)
     lazy val jsGenerateMapFile = SettingKey[Boolean](
       "js-generate-map-file", "If true, Closure Compiler will generate map file (default false)", closure)
+    lazy val defineReplacements = SettingKey[Map[String, AnyRef]](
+      "define-replacements", "Closure Compiler define replacements", closure)
   }
 
   /** Provide quick access to the enum values in com.google.javascript.jscomp.VariableRenamingPolicy */
@@ -74,8 +76,9 @@ object Plugin extends Plugin {
       jsPrettyPrint in closure,
       jsStrictMode in closure,
       jsCompilationLevel in closure,
-      jsWarningLevel in closure) apply {
-      (out, variableRenamingPolicy, prettyPrint, strictMode, compilationLevel, warningLevel) =>
+      jsWarningLevel in closure,
+      defineReplacements in closure) apply {
+      (out, variableRenamingPolicy, prettyPrint, strictMode, compilationLevel, warningLevel, defineReplacements) =>
         val options = new CompilerOptions
 
         options.variableRenaming = variableRenamingPolicy
@@ -89,6 +92,10 @@ object Plugin extends Plugin {
         } else {
           options.setLanguageIn(CompilerOptions.LanguageMode.ECMASCRIPT5)
         }
+
+        val defines = new java.util.HashMap[String, Object]()
+        defineReplacements.foreach((define) => defines.put(define._1, define._2))
+        options.setDefineReplacements(defines)
 
         options
     }
@@ -167,7 +174,8 @@ object Plugin extends Plugin {
     jsStrictMode in closure := false,
     jsCompilationLevel in closure := CompilationLevel.SIMPLE_OPTIMIZATIONS,
     jsWarningLevel in closure := WarningLevel.DEFAULT,
-    jsGenerateMapFile in closure := false
+    jsGenerateMapFile in closure := false,
+    defineReplacements in closure := Map()
   )
 
   private def closureCleanTask =
