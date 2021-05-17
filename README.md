@@ -7,19 +7,20 @@ This plugin is helping to work with Google Closure Compiler of your JavaScripts 
 ## Install
 
 ```scala
-resolvers += Resolver.url(
-    "hitsoft-sbt-plugin-releases",
-    url("http://dl.bintray.com/content/hitsoft/sbt-plugin-releases")
-    )(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.hitsoft" % "sbt-closurec" % "0.1.2")
+val verClosurec = "0.1.3"
+
+lazy val closurecPlugin = uri(s"https://github.com/hitsoft/sbt-closurec.git#$verClosurec")
+
+lazy val root = project.in(file("."))
+	.dependsOn(closurecPlugin)
 ```
 
-_NOTE_ this plugin is targeting the next release of sbt, 0.13.0
+_NOTE_ this plugin is targeting the release of sbt, 0.13.7
 
 You will need to add the following to your `project/build.properties` file if you have multiple versions of sbt installed
 
-    sbt.version=0.13.0
+    sbt.version=0.13.7
 
 Be sure to use the [latest launcher](http://www.scala-sbt.org/0.13.0/docs/Getting-Started/Setup.html#installing-sbt).
 
