@@ -8,7 +8,7 @@ libraryDependencies += "com.google.javascript" % "closure-compiler"   % "v201310
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
 
-seq(scriptedSettings:_*)
+// seq(scriptedSettings:_*)
 
 scalacOptions := Seq("-deprecation", "-unchecked", "-encoding", "utf8")
 
